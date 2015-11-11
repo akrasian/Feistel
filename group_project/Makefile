@@ -1,5 +1,8 @@
 CC     = g++
-CFLAGS = -Wall -pedantic -s -O2 -I.. -DTTMATH_DONT_USE_WCHAR
+
+#CFLAGS = -Wall -pedantic -s -O2 -I.. -DTTMATH_DONT_USE_WCHAR
+#ttmath gives a ton of warnings for unused vars, will have to check them out later
+CFLAGS = -s -O3 -I.. -DTTMATH_DONT_USE_WCHAR
 
 .SUFFIXES: .cpp .o
 

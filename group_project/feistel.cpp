@@ -4,7 +4,7 @@
 using namespace std;
 
 //Number of words to use per hugeInt - this directly effects performance, but if you use too small a size for the arrays, this will fail horribly.- assuming 64 bit computers 16 is fine for 512 bit numbers.
-//Using 16 word hugeInts and 512 bit keys, I can do 10K modular exponents per second.
+//Using 16 word hugeInts and 512 bit keys with -O3, I can do 13K modular exponents per second.
 //credit to http://www.ttmath.org/forum/modular_exponentiation for the function below, will look for optimizations and rewrite in a bit, just wanted to check the speed of this algorithm.
 typedef ttmath::UInt < 16 > hugeInt;
 
@@ -52,8 +52,11 @@ int main() {
 	g = base -3;
 	x = base -2;
 	p = base -1;
+		
 	y = "1";
 
-	modExp(g, x, p, y);
+	for(int i = 0; i<10000; i++){
+		modExp(g, x, p, y);
+	}
 	cout << "Value of (2^512 -3) ^ (2^512 -2) mod (2^512 -1) is \n" << y << endl;
 }
