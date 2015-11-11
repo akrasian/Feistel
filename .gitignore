@@ -1,0 +1,11 @@
+*
+!*/
+!.gitignore
+!*.cpp
+!*.h
+!*.asm
+!Makefile
+!CHANGELOG
+!COPYRIGHT
+!README.md
+!README
