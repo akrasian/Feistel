@@ -3,11 +3,13 @@
 
 using namespace std;
 
-typedef ttmath::UInt < 100 > hugeInt;
+//Number of words to use per hugeInt - this directly effects performance, but if you use too small a size for the arrays, this will fail horribly.- assuming 64 bit computers 16 is fine for 512 bit numbers.
+//Using 16 word hugeInts and 512 bit keys, I can do 10K modular exponents per second.
+typedef ttmath::UInt < 16 > hugeInt;
 
-// result = (base ^ exponent) mod modulus
+// result = (base ^ exponent) % modulus
 template < typename Integer >
-    int powm(const Integer & base, const Integer & exponent,
+    int modExp(const Integer & base, const Integer & exponent,
 	     const Integer & modulus, Integer & result) {
 	int c = 0;
 	Integer rem, b, e;
@@ -44,20 +46,13 @@ int main() {
 	hugeInt exp = 512;
 	base.Pow(exp);
 	
-	cout << base << endl;
+	cout << "value of 2^512 is \n" << base << endl;
 	
-	p = base -1;
-	x = base -2;
 	g = base -3;
+	x = base -2;
+	p = base -1;
 	y = "1";
-	
-	cout << p << endl;
-	cout << x << endl;
-	cout << g << endl;
-	cout << y << endl;
 
-	for(int i = 0; i<100; i++){
-		powm(g, x, p, y);
-		cout << y << endl;
-	}
+	modExp(g, x, p, y);
+	cout << "Value of (2^512 -3) ^ (2^512 -2) mod (2^512 -1) is \n" << y << endl;
 }
