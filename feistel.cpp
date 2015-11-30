@@ -5,8 +5,6 @@
 
 char * getPrimeFromFile(const char * safePrimeFile);
 char * getSeedFromFile (const char * randomSeedFile);
-void testExponentiation();
-
 void generate (const mpz_t primeString, const mpz_t seedString, mpz_t output1, mpz_t output2);
 
 int main(int argc, const char *argv[]){
