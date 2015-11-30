@@ -45,11 +45,11 @@ int main(int argc, const char *argv[]){
 	//Timing how long it takes to run a PRF on this implementation
 	//~ for (int feistel_round = 0; feistel_round < 3; feistel_round++){
 	for(int i = 0; i<primeLen; i++){
-		generate(prime, seed, output, 0);
+		generate(prime, seed, output, 1);
 		//For the next output of the PRF, would choose one of output1, output2
 		//arbitrarily take output1 for test
 		
-		gmp_printf ("Output1 sub %d: %Zx\n", i, output);
+		//~ gmp_printf ("Output1 sub %d: %Zx\n", i, output);
 		mpz_init_set(seed, output);
 	}
 	
@@ -70,15 +70,8 @@ void generate (const mpz_t m, const mpz_t x, mpz_t output, int rightValue){
 	mpz_t g; //In safe prime groups, g can be the generator.
 	mpz_init_set_str(g, "2", 10);
 	
-	if (!rightValue){
-		mpz_powm (output, g, output, m);
-		return;
-	}
-	
 	const size_t EXPANSION = primeLen;
 	char hc_bits [EXPANSION +1]; //Store as an array of 0 and 1 chars at first.
-	
-	
 	
 	//~ gmp_printf ("Generator:\n%Zx\n\n", g);
 	//~ gmp_printf ("Exponent :\n%Zx\n\n", x);
@@ -109,7 +102,9 @@ void generate (const mpz_t m, const mpz_t x, mpz_t output, int rightValue){
 	hc_bits[EXPANSION] = '\0';
 	//~ printf("O2 = [%s]\n", hc_bits);
 	
-	mpz_init_set_str(output, hc_bits, 2);
+	if (rightValue){
+		mpz_init_set_str(output, hc_bits, 2);
+	}
 }
 
 char * getPrimeFromFile (const char * safePrimeFile){
