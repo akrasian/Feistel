@@ -3,63 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-void testExponentiation(){
-	mpz_t g,x,m,c;		/* working numbers */
-	
-	const int EXPANSION = 512;
-	int hc_bits [EXPANSION];
-
-	//Known safe primes... from http://tools.ietf.org/html/rfc3526#section-2
-	const char* safe2048bit = "FFFFFFFF FFFFFFFF C90FDAA2 2168C234 C4C6628B 80DC1CD1 29024E08 8A67CC74 020BBEA6 3B139B22 514A0879 8E3404DD EF9519B3 CD3A431B 302B0A6D F25F1437 4FE1356D 6D51C245 E485B576 625E7EC6 F44C42E9 A637ED6B 0BFF5CB6 F406B7ED EE386BFB 5A899FA5 AE9F2411 7C4B1FE6 49286651 ECE45B3D C2007CB8 A163BF05 98DA4836 1C55D39A 69163FA8 FD24CF5F 83655D23 DCA3AD96 1C62F356 208552BB 9ED52907 7096966D 670C354E 4ABC9804 F1746C08 CA18217C 32905E46 2E36CE3B E39E772C 180E8603 9B2783A2 EC07A28F B5C55DF0 6F4C52C9 DE2BCBF6 95581718 3995497C EA956AE5 15D22618 98FA0510 15728E5A 8AACAA68 FFFFFFFF FFFFFFFF";
-	const char* safe1536bit = "FFFFFFFF FFFFFFFF C90FDAA2 2168C234 C4C6628B 80DC1CD1       29024E08 8A67CC74 020BBEA6 3B139B22 514A0879 8E3404DD       EF9519B3 CD3A431B 302B0A6D F25F1437 4FE1356D 6D51C245       E485B576 625E7EC6 F44C42E9 A637ED6B 0BFF5CB6 F406B7ED       EE386BFB 5A899FA5 AE9F2411 7C4B1FE6 49286651 ECE45B3D       C2007CB8 A163BF05 98DA4836 1C55D39A 69163FA8 FD24CF5F       83655D23 DCA3AD96 1C62F356 208552BB 9ED52907 7096966D       670C354E 4ABC9804 F1746C08 CA237327 FFFFFFFF FFFFFFFF";
-	
-	
-	const char* safe512bit =  "CF46878617AB98C7C468DE3A2364ECA8B7C1485D9B9FE201D80148449E89032AD7D1EAC6CFA1BCA91A6754471291C7DE43404DE743E4C218F3BEA2613A5AEB7B";
-	
-	mpz_init_set_str(g, "2", 10);	/* Assume decimal integers */
-	mpz_init_set_str(x, "13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084094", 10);	/* Assume decimal integers */
-
-	//512 bit safe prime (too small for much use really) - this is a terrible practice.
-	mpz_init_set_str(m, safe512bit, 16);	/* Assume hex integers */
-	
-	gmp_printf ("Generator:\n%Zd\n\n", g);
-	gmp_printf ("Exponent :\n%Zd\n\n", x);
-	gmp_printf ("Modulus  :\n%Zd\n\n", m);
-	
-	mpz_init(c);
-	
-	mpz_t half_point;
-	mpz_init(half_point);
-	
-	mpz_t two;
-	mpz_init_set_str(two, "2", 10);	/* Assume decimal integers */
-	
-	mpz_sub_ui (half_point, m, 1); //Subtract 1 from modulus
-	mpz_divexact (half_point, half_point, two); //Divide in half exactly (g is 2)
-	
-	gmp_printf ("Halfpoint: %Zd\n\n", half_point);
-	
-	for(int i = 0; i<EXPANSION; i++){
-		
-		//hp,g(y) = 1 if y < (p-1)/2, 0 if y >= (p-1)/2, where y = fp,g(x)
-		int comparison = mpz_cmp(x, half_point);
-		if (comparison < 0){
-			hc_bits[i] = 0;
-		} else {
-			hc_bits[i] = 1;
-		}
-		
-		
-		mpz_powm (x, g, x, m);
-		//~ gmp_printf ("%Zd\n", x);
-	}
-	
-	gmp_printf ("%Zd\n", x);
-}
-
 char * getPrimeFromFile(const char * safePrimeFile);
 char * getSeedFromFile (const char * randomSeedFile);
+void testExponentiation();
 
+void generate (const mpz_t primeString, const mpz_t seedString, mpz_t output1, mpz_t output2);
 
 int main(int argc, const char *argv[]){
 	printf("Number of arguments: %d\n", argc-1);
@@ -86,12 +34,82 @@ int main(int argc, const char *argv[]){
 	printf("primeString: [%s]\n", primeString);
 	printf("seedString: [%s]\n", seedString);
 	
+	mpz_t prime, seed, output1, output2;
+	mpz_init_set_str(prime, primeString, 16);
+	mpz_init_set_str(seed, seedString, 16);
+	mpz_init(output1);
+	mpz_init(output2);
+	
+	generate(prime, seed, output1, output2);
+	
 	free (primeString);
 	free (seedString);
 	
 	printf("All processing complete\n");
 }
 
+void generate (const mpz_t m, const mpz_t x, mpz_t output1, mpz_t output2){
+	//~ mpz_t g,x,m,c;		/* working numbers */
+	
+	//Don't overwrite x, 
+	mpz_init_set(output1, x);
+	
+	const int EXPANSION = 512;
+	char hc_bits [EXPANSION +1]; //Store as an array of 0 and 1 chars at first.
+//~ 
+//~ 
+	mpz_t g; //In safe prime groups, g can be the generator.
+	mpz_init_set_str(g, "2", 10);
+	
+	gmp_printf ("Generator:\n%Zx\n\n", g);
+	gmp_printf ("Exponent :\n%Zx\n\n", x);
+	gmp_printf ("Modulus  :\n%Zx\n\n", m);
+	
+	//Calculate halfway point for hardcore bits...
+	mpz_t half_point;
+	mpz_init(half_point);
+	mpz_t two;
+	mpz_init_set_str(two, "2", 10);	/* Assume decimal integers */
+	mpz_sub_ui (half_point, m, 1); //Subtract 1 from modulus
+	mpz_divexact (half_point, half_point, two); //Divide in half exactly
+	gmp_printf ("Halfpoint: %Zx\n\n", half_point);
+	
+	for(int i = 0; i< EXPANSION; ++i){
+		//hp,g(y) = 1 if y < (p-1)/2, 0 if y >= (p-1)/2, where y = fp,g(x)
+		int comparison = mpz_cmp(output1, half_point);
+		
+		if (comparison < 0){
+			hc_bits[i] = '0';
+		} else {
+			hc_bits[i] = '1';
+		}
+		
+		mpz_powm (output1, g, output1, m);
+	}
+	
+	hc_bits[EXPANSION] = '\0';
+	printf("O2 = [%s]\n", hc_bits);
+	
+	mpz_init_set_str(output2, hc_bits, 2);
+	gmp_printf ("Output1: %Zx\n\n", output1);
+	gmp_printf ("Output2: %Zx\n\n", output2);
+
+	//~ for(int i = 0; i<EXPANSION; i++){
+		//~ 
+		//~ //hp,g(y) = 1 if y < (p-1)/2, 0 if y >= (p-1)/2, where y = fp,g(x)
+		//~ int comparison = mpz_cmp(x, half_point);
+		//~ if (comparison < 0){
+			//~ hc_bits[i] = 0;
+		//~ } else {
+			//~ hc_bits[i] = 1;
+		//~ }
+		//~ 
+		//~ 
+		//~ mpz_powm (x, g, x, m);=
+	//~ }
+	//~ 
+	//~ gmp_printf ("%Zd\n", x);
+}
 
 char * getPrimeFromFile (const char * safePrimeFile){
 	printf("Reading %s\n",safePrimeFile);
