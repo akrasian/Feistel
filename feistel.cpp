@@ -2,10 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 char * getPrimeFromFile(const char * safePrimeFile);
 char * getSeedFromFile (const char * randomSeedFile);
-void generate (const mpz_t primeString, const mpz_t seedString, mpz_t output1, mpz_t output2);
+void generate (const mpz_t primeString, const mpz_t seedString, mpz_t output, int rightValue);
+
+size_t primeLen = 0;
 
 int main(int argc, const char *argv[]){
 	printf("Number of arguments: %d\n", argc-1);
@@ -32,13 +35,25 @@ int main(int argc, const char *argv[]){
 	printf("primeString: [%s]\n", primeString);
 	printf("seedString: [%s]\n", seedString);
 	
-	mpz_t prime, seed, output1, output2;
+	mpz_t prime, seed, output;
 	mpz_init_set_str(prime, primeString, 16);
 	mpz_init_set_str(seed, seedString, 16);
-	mpz_init(output1);
-	mpz_init(output2);
+	mpz_init(output);
 	
-	generate(prime, seed, output1, output2);
+	clock_t start = clock();
+	
+	//Timing how long it takes to run a PRF on this implementation
+	//~ for (int feistel_round = 0; feistel_round < 3; feistel_round++){
+	for(int i = 0; i<primeLen; i++){
+		generate(prime, seed, output, 0);
+		//For the next output of the PRF, would choose one of output1, output2
+		//arbitrarily take output1 for test
+		
+		gmp_printf ("Output1 sub %d: %Zx\n", i, output);
+		mpz_init_set(seed, output);
+	}
+	
+	printf("Time taken %ld milliseconds\n", (clock() - start) * 1000 / CLOCKS_PER_SEC);
 	
 	free (primeString);
 	free (seedString);
@@ -46,21 +61,28 @@ int main(int argc, const char *argv[]){
 	printf("All processing complete\n");
 }
 
-void generate (const mpz_t m, const mpz_t x, mpz_t output1, mpz_t output2){
+void generate (const mpz_t m, const mpz_t x, mpz_t output, int rightValue){
 	//~ mpz_t g,x,m,c;		/* working numbers */
 	
 	//Don't overwrite x, 
-	mpz_init_set(output1, x);
-	
-	const int EXPANSION = 512;
-	char hc_bits [EXPANSION +1]; //Store as an array of 0 and 1 chars at first.
+	mpz_init_set(output, x);
 	
 	mpz_t g; //In safe prime groups, g can be the generator.
 	mpz_init_set_str(g, "2", 10);
 	
-	gmp_printf ("Generator:\n%Zx\n\n", g);
-	gmp_printf ("Exponent :\n%Zx\n\n", x);
-	gmp_printf ("Modulus  :\n%Zx\n\n", m);
+	if (!rightValue){
+		mpz_powm (output, g, output, m);
+		return;
+	}
+	
+	const size_t EXPANSION = primeLen;
+	char hc_bits [EXPANSION +1]; //Store as an array of 0 and 1 chars at first.
+	
+	
+	
+	//~ gmp_printf ("Generator:\n%Zx\n\n", g);
+	//~ gmp_printf ("Exponent :\n%Zx\n\n", x);
+	//~ gmp_printf ("Modulus  :\n%Zx\n\n", m);
 	
 	//Calculate halfway point for hardcore bits...
 	mpz_t half_point;
@@ -69,11 +91,11 @@ void generate (const mpz_t m, const mpz_t x, mpz_t output1, mpz_t output2){
 	mpz_init_set_str(two, "2", 10);
 	mpz_sub_ui (half_point, m, 1); //Subtract 1 from modulus
 	mpz_divexact (half_point, half_point, two); //Divide in half exactly
-	gmp_printf ("Halfpoint: %Zx\n\n", half_point);
+	//~ gmp_printf ("Halfpoint: %Zx\n\n", half_point);
 	
 	for(int i = 0; i< EXPANSION; ++i){
 		//hardcore(y) = 1 if y < (p-1)/2, 0 if y >= (p-1)/2, where y = f<p,g>(x)
-		int comparison = mpz_cmp(output1, half_point);
+		int comparison = mpz_cmp(output, half_point);
 		
 		if (comparison < 0){
 			hc_bits[i] = '0';
@@ -81,15 +103,13 @@ void generate (const mpz_t m, const mpz_t x, mpz_t output1, mpz_t output2){
 			hc_bits[i] = '1';
 		}
 		
-		mpz_powm (output1, g, output1, m);
+		mpz_powm (output, g, output, m);
 	}
 	
 	hc_bits[EXPANSION] = '\0';
-	printf("O2 = [%s]\n", hc_bits);
+	//~ printf("O2 = [%s]\n", hc_bits);
 	
-	mpz_init_set_str(output2, hc_bits, 2);
-	gmp_printf ("Output1: %Zx\n\n", output1);
-	gmp_printf ("Output2: %Zx\n\n", output2);
+	mpz_init_set_str(output, hc_bits, 2);
 }
 
 char * getPrimeFromFile (const char * safePrimeFile){
@@ -111,6 +131,8 @@ char * getPrimeFromFile (const char * safePrimeFile){
 		
 		if (sscanf(primeLengthLine, "%d", &uiPrimeLen) ){
 			primeLength = (size_t)uiPrimeLen;
+			
+			primeLen = primeLength;
 		} else {
 			printf("No num on line\n");
 			exit (1);
