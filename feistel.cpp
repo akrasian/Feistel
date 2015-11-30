@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <gmp.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -56,8 +56,7 @@ void generate (const mpz_t m, const mpz_t x, mpz_t output1, mpz_t output2){
 	
 	const int EXPANSION = 512;
 	char hc_bits [EXPANSION +1]; //Store as an array of 0 and 1 chars at first.
-//~ 
-//~ 
+	
 	mpz_t g; //In safe prime groups, g can be the generator.
 	mpz_init_set_str(g, "2", 10);
 	
@@ -69,13 +68,13 @@ void generate (const mpz_t m, const mpz_t x, mpz_t output1, mpz_t output2){
 	mpz_t half_point;
 	mpz_init(half_point);
 	mpz_t two;
-	mpz_init_set_str(two, "2", 10);	/* Assume decimal integers */
+	mpz_init_set_str(two, "2", 10);
 	mpz_sub_ui (half_point, m, 1); //Subtract 1 from modulus
 	mpz_divexact (half_point, half_point, two); //Divide in half exactly
 	gmp_printf ("Halfpoint: %Zx\n\n", half_point);
 	
 	for(int i = 0; i< EXPANSION; ++i){
-		//hp,g(y) = 1 if y < (p-1)/2, 0 if y >= (p-1)/2, where y = fp,g(x)
+		//hardcore(y) = 1 if y < (p-1)/2, 0 if y >= (p-1)/2, where y = f<p,g>(x)
 		int comparison = mpz_cmp(output1, half_point);
 		
 		if (comparison < 0){
@@ -93,22 +92,6 @@ void generate (const mpz_t m, const mpz_t x, mpz_t output1, mpz_t output2){
 	mpz_init_set_str(output2, hc_bits, 2);
 	gmp_printf ("Output1: %Zx\n\n", output1);
 	gmp_printf ("Output2: %Zx\n\n", output2);
-
-	//~ for(int i = 0; i<EXPANSION; i++){
-		//~ 
-		//~ //hp,g(y) = 1 if y < (p-1)/2, 0 if y >= (p-1)/2, where y = fp,g(x)
-		//~ int comparison = mpz_cmp(x, half_point);
-		//~ if (comparison < 0){
-			//~ hc_bits[i] = 0;
-		//~ } else {
-			//~ hc_bits[i] = 1;
-		//~ }
-		//~ 
-		//~ 
-		//~ mpz_powm (x, g, x, m);=
-	//~ }
-	//~ 
-	//~ gmp_printf ("%Zd\n", x);
 }
 
 char * getPrimeFromFile (const char * safePrimeFile){
