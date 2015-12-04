@@ -9,10 +9,10 @@ generate: safePrimeGen
 	./safePrimeGen 128 safe128.txt
 
 feistel: feistel.cpp
-	gcc -O3 -o feistel feistel.cpp -lgmp -lm
+	g++ -O3 -o feistel feistel.cpp -lgmp -lm
 
 safePrimeGen: safePrimeGen.cpp
-	gcc -O3 -o safePrimeGen safePrimeGen.cpp -lgmp -lm
+	g++ -O3 -o safePrimeGen safePrimeGen.cpp -lgmp -lm
 
 clean:
 	rm -f safePrimeGen

@@ -24,7 +24,8 @@ int main(int argc, const char *argv[]){
 	
 	const char * safePrimeFile = argv[1];
 	const char * randomSeedFile = argv[2];
-	const char * outputFile = argv[3];
+	const char * keyFile = argv[3];
+	const char * outputFile = argv[4];
 	
 	printf("File for primes: %s\n", safePrimeFile);
 	printf("File for random input: %s\n", randomSeedFile);
@@ -33,43 +34,56 @@ int main(int argc, const char *argv[]){
 	
 	char * primeString = getPrimeFromFile(safePrimeFile);
 	char * seedString = getSeedFromFile(randomSeedFile);
+	char * keyString = getSeedFromFile(keyFile);
 	
 	printf("primeString: [%s]\n", primeString);
 	printf("seedString: [%s]\n", seedString);
-	mpz_t output, key; //THIS KEY NEEDS TO BE GOTTEN FROM A KEY SCHEDULE
+	printf("keyString: [%s]\n", keyString);
+	mpz_t output;//, key; //THIS KEY NEEDS TO BE GOTTEN FROM A KEY SCHEDULE
 
 
 	mpz_init(output);
 
-	mpz_init_set_str(key, "2a190485720987748910038470198347", 16); 	//Using random value for now not sure what we really use to decide left or right branch
+	//mpz_init_set_str(key, "2a190485720987748910038470198347", 16); 	//Using random value for now not sure what we really use to decide left or right branch
 																	//A key schedule will need to be created 
-	mpz_t prime, seed;
+	mpz_t prime, seed, key;
 	mpz_init_set_str(prime, primeString, 16);
 	mpz_init_set_str(seed, seedString, 16);
+	mpz_init_set_str(key, keyString, 16);
 	
 	//Feistel Network implementation 
 	//The seed for the left and right parts of the feistel network is psfuncs L and R output
 
 	//Initialize stuff
-	mpz_t l[rounds+1], r[rounds+1], funcOut[rounds+1];
+	mpz_t l[rounds+1], r[rounds+1], funcOut[rounds+1], keySchedule[+1];
 	for(int i = 0; i <= rounds; i++){
 		mpz_init(l[i]);
 		mpz_init(r[i]);
 		mpz_init(funcOut[i]);
+		mpz_init(keySchedule[i]);
 	}
 
 	generate(prime, seed, l[0], 0);
 	generate(prime, seed, r[0], 1);
+
+	printf("Key schedule:\n");
+	mpz_init_set(keySchedule[0], key);
+	for(int i = 0; i < rounds; i++){
+		generate(prime, keySchedule[i], keySchedule[i+1], 1);
+		gmp_printf("Key %d: %Zx\n",i+1, keySchedule[i+1]);
+	}
+	printf("\n");
+
 	//Feistel rounds v2
 	for(int i = 1; i <= rounds; i++){
 		mpz_init_set(l[i], r[i-1]);
-		psfunc(prime, r[i-1], funcOut[i], key);
+		psfunc(prime, r[i-1], funcOut[i], keySchedule[i]);														
 		mpz_xor(r[i], l[i-1], funcOut[i]);
 	}
 
-	//Concat these two numbers for the new psudorandom number
-	gmp_printf("L3: %Zx\n", l[3]);
-	gmp_printf("R3: %Zx\n", r[3]);
+	//TODO: Concat these two numbers PROPERLY for the new psudorandom number. 
+	gmp_printf("Psuedo Random Number: %Zx", l[3]);
+	gmp_printf("%Zx\n", r[3]);
 
 	
 	free (primeString);
@@ -81,11 +95,10 @@ int main(int argc, const char *argv[]){
 void psfunc(mpz_t prime, mpz_t seed, mpz_t output, mpz_t key){
 
 	clock_t start = clock();
-	printf ("Prime Len %lu\n", primeLen);
 	//Timing how long it takes to run a PRF on this implementation
 	for(int i = 0; i<primeLen; i++){
 
-		if(mpz_tstbit(key, 127-i)){
+		if(mpz_tstbit(key, primeLen-1-i)){															
 			//printf("1");
 			generate(prime, seed, output, 1);
 			//gmp_printf ("Output1 sub %d: %Zx\n", i, output);
@@ -95,16 +108,13 @@ void psfunc(mpz_t prime, mpz_t seed, mpz_t output, mpz_t key){
 			//gmp_printf ("Output0 sub %d: %Zx\n", i, output);
 		}
 
-		
-		//For the next output of the PRF, would choose one of output1, output2
-		//arbitrarily take output1 for test
 		mpz_init_set(seed, output);
 	}
-	printf("\n");
+	//printf("\n");
 	
 	printf("Time taken %ld milliseconds\n", (clock() - start) * 1000 / CLOCKS_PER_SEC);
 }
-//				prime 			seed 			output 		1 for right 0 for left
+
 void generate (const mpz_t m, const mpz_t x, mpz_t output, int rightValue){
 	//~ mpz_t g,x,m,c;		/* working numbers */
 	
@@ -150,6 +160,12 @@ void generate (const mpz_t m, const mpz_t x, mpz_t output, int rightValue){
 		mpz_init_set_str(output, hc_bits, 2);
 	}
 }
+
+void genKeySche(mpz_t schedule[], int rounds){
+
+
+}
+
 
 char * getPrimeFromFile (const char * safePrimeFile){
 	printf("Reading %s\n",safePrimeFile);
