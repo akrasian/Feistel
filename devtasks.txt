@@ -1,1 +1,6 @@
-test
+Testing and scientific experiment:
+
+The requirements for the experimental portion of this assignment are basically that we need to perform analysis on the output once it is completed.
+The suggestions Zapp gave were that we should perform statistical tests
+as well as graphing the results, and comparing to what you would expect from a true PRP
+
