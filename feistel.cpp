@@ -45,7 +45,7 @@ int main(int argc, const char *argv[]){
 	//Timing how long it takes to run a PRF on this implementation
 	//~ for (int feistel_round = 0; feistel_round < 3; feistel_round++){
 	for(int i = 0; i<primeLen; i++){
-		generate(prime, seed, output, 0);
+		generate(prime, seed, output, 1);
 		//For the next output of the PRF, would choose one of output1, output2
 		//arbitrarily take output1 for test
 		
@@ -77,8 +77,6 @@ void generate (const mpz_t m, const mpz_t x, mpz_t output, int rightValue){
 	
 	const size_t EXPANSION = primeLen;
 	char hc_bits [EXPANSION +1]; //Store as an array of 0 and 1 chars at first.
-	
-	
 	
 	//~ gmp_printf ("Generator:\n%Zx\n\n", g);
 	//~ gmp_printf ("Exponent :\n%Zx\n\n", x);

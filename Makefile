@@ -1,11 +1,13 @@
 all: safePrimeGen feistel
 
 run: feistel
-	./feistel safe512.txt random.txt out.txt
+#~ 	./feistel safe512.txt random.txt out.txt
+	./feistel safe256.txt random.txt out.txt
 #~ 	./feistel safe128.txt random.txt out.txt
 
 generate: safePrimeGen
-	./safePrimeGen 512 safe512.txt
+#~ 	./safePrimeGen 512 safe512.txt
+	./safePrimeGen 256 safe256.txt
 #~ 	./safePrimeGen 128 safe128.txt
 
 feistel: feistel.cpp
