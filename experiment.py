@@ -1,13 +1,14 @@
-from os import system
+import os
 import sys
 import time
 
+experimentResultFile = "FinalResult.txt"
 max_length = 128 / 4
 print max_length
 
 ctr_start = 0
-#~ num_iterations = 32
-num_iterations = 2
+num_iterations = 32
+#~ num_iterations = 2
 
 finalString = ""
 
@@ -30,9 +31,10 @@ for i in range (ctr_start, ctr_start+num_iterations):
 	command = "./feistel safe128.txt random128.txt "+plaintextFile+" "+outputFile
 	print command
 	
-	system (command)
-	#~ time.sleep(2)
-
+	os.system (command)
+	while not os.path.isfile(outputFile):
+		time.sleep(1)
+	
 	f = open(outputFile, 'r')
 	output = f.read()
 	f.close()
@@ -44,7 +46,7 @@ print "Final String", finalString
 print "Final length", len(finalString)
 print "Expected length", 2*max_length*num_iterations
 
-f = open('Experimentresult.txt', 'w')
+f = open(experimentResultFile, 'w')
 f.write(finalString)
 f.close()
 	
