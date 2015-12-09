@@ -78,6 +78,17 @@ int main(int argc, const char *argv[]){
 	//~ printf("Result: ac8b0e8e12c43ab%s\n", result);
 	printf("Result:               : [%s]\n", result);
 	
+	FILE * out = fopen(outputFile, "w");
+
+	if (out == NULL) {
+		fprintf(stderr, "Can't open output file %s, quitting.\n", outputFile);
+		exit(1);
+	} else {
+		fprintf(out, "%s", result);
+	}
+
+	fclose(out);
+	
 	printf("All processing complete\n");
 	return 0;
 }

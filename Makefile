@@ -1,7 +1,7 @@
 all: safePrimeGen feistel
 
-run: generate
-#~ run: runFeistel
+#~ run: generate
+run: runFeistel
 	
 runFeistel: feistel
 	./feistel safe128.txt random128.txt plaintext256.txt out.txt
