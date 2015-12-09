@@ -77,6 +77,7 @@ int main(int argc, const char *argv[]){
 	feistel(result, plaintext);
 	//~ printf("Result: ac8b0e8e12c43ab%s\n", result);
 	printf("Result:               : [%s]\n", result);
+	printf("Result Length:        : %ld\n", strlen(result));
 	
 	
 	FILE * out = NULL;
@@ -203,18 +204,25 @@ void feistel(char * result, const char * plaintext){
 		mpz_set(left, temp);
 	}
 	
-	gmp_sprintf(leftString, "%Zx", left);
-	gmp_sprintf(rightString, "%Zx", right);
+	gmp_sprintf(leftString, "%032Zx", left);
+	gmp_sprintf(rightString, "%032Zx", right);
 	
-	printf("Left String = %s\n",leftString);
-	printf("Right String = %s\n",rightString);
-	printf("Fragment size = %d\n",fragmentSize);
+	//~ printf("Left String = %s\n",leftString);
+	//~ printf("Right String = %s\n",rightString);
+	//~ printf("Fragment size = %d\n",fragmentSize);
 	
 	//Ensure result is empty before adding characters.
 	result[0] = '\0';
-	strncat (result, leftString, fragmentSize+1);
-	strncat (result + fragmentSize, rightString, fragmentSize+1);
-	printf("Result = %s\n",result);
+	//~ strncat (result, leftString, fragmentSize+1);
+	//~ strncat (result + fragmentSize, rightString, fragmentSize+1);
+	
+	//~ printf("Left Length:        : %ld\n", strlen(leftString));
+	//~ printf("Right Length:        : %ld\n", strlen(rightString));
+	
+	sprintf(result, "%s%s", leftString, rightString);
+	//~ printf("Result = %s\n",result);
+	
+	
 }
 
 char * getPrimeFromFile (const char * safePrimeFile){

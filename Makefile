@@ -5,6 +5,7 @@ run: runFeistel
 	
 runFeistel: feistel
 #~ 	./feistel safe128.txt random128.txt temp/plaintext17.txt temp/output17.txt
+	./feistel safe128.txt random128.txt temp/plaintext22.txt temp/output22.txt
 	./feistel safe128.txt random128.txt temp/plaintext23.txt temp/output23.txt
 	./feistel safe128.txt random128.txt temp/plaintext24.txt temp/output24.txt
 
