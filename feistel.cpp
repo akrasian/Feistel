@@ -78,12 +78,11 @@ int main(int argc, const char *argv[]){
 	//~ printf("Result: ac8b0e8e12c43ab%s\n", result);
 	printf("Result:               : [%s]\n", result);
 	
-	FILE * out = fopen(outputFile, "w");
-
-	if (out == NULL) {
-		fprintf(stderr, "Can't open output file %s, quitting.\n", outputFile);
-		exit(1);
-	} else {
+	
+	FILE * out = NULL;
+	
+	while (out == NULL){
+		out = fopen(outputFile, "w");
 		fprintf(out, "%s", result);
 	}
 
@@ -207,10 +206,15 @@ void feistel(char * result, const char * plaintext){
 	gmp_sprintf(leftString, "%Zx", left);
 	gmp_sprintf(rightString, "%Zx", right);
 	
+	printf("Left String = %s\n",leftString);
+	printf("Right String = %s\n",rightString);
+	printf("Fragment size = %d\n",fragmentSize);
+	
 	//Ensure result is empty before adding characters.
 	result[0] = '\0';
 	strncat (result, leftString, fragmentSize+1);
 	strncat (result + fragmentSize, rightString, fragmentSize+1);
+	printf("Result = %s\n",result);
 }
 
 char * getPrimeFromFile (const char * safePrimeFile){

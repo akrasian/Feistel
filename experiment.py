@@ -18,8 +18,8 @@ for i in range (ctr_start, ctr_start+num_iterations):
 	num_hex_chars = len(hexres)
 	hexres = '0'*(2*max_length - num_hex_chars) +hexres
 	
-	plaintextFile = "temp/plaintext256_"+str(i)
-	outputFile = "temp/output256_"+str(i)
+	plaintextFile = "temp/plaintext"+str(i)+".txt"
+	outputFile = "temp/output"+str(i)+".txt"
 	
 	f = open(plaintextFile, 'w')
 	f.write(hexres)
@@ -32,6 +32,7 @@ for i in range (ctr_start, ctr_start+num_iterations):
 	print command
 	
 	os.system (command)
+	print "Generating output in ",outputFile
 	while not os.path.isfile(outputFile):
 		time.sleep(1)
 	
@@ -39,7 +40,7 @@ for i in range (ctr_start, ctr_start+num_iterations):
 	output = f.read()
 	f.close()
 	
-	print "Output = ["+output+"]"
+	print "Output = ["+output+"]\n\n\n\n\n\n"
 	finalString = finalString + output
 
 print "Final String", finalString
