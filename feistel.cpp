@@ -5,6 +5,8 @@
 #include <time.h>
 #include <string>
 
+const int ROUNDS = 3; //Same as in DES.
+
 char * getPrimeFromFile(const char * safePrimeFile);
 char * getHexStringFromFile (const char * randomSeedFile);
 
@@ -17,20 +19,18 @@ void generateRight(mpz_t result); //returns from state.
 void generateKeySchedule();
 void feistel(char * result, const char * plaintext);
 
-void runFeistel();
-
 //Specifies MINIMUM length of prime, specified in given prime file in bits..
 //If the file says the prime is 128 bits long, it will in fact be a bit longer to fit the next prime.
 size_t primeLen = 0;
 
-const int ROUNDS = 3;
-//~ const int ROUNDS = 100;
+//The key schedule used in all iterations for this feistel network.
+mpz_t keySchedule [ROUNDS];
 
+//State for the RNG.
 mpz_t generatorState;
 mpz_t groupPrime;
 mpz_t groupGenerator;
 mpz_t halfPoint;
-mpz_t keySchedule [ROUNDS];
 
 int main(int argc, const char *argv[]){
 	printf("Number of arguments: %d\n", argc-1);
@@ -160,10 +160,8 @@ void keyedPRF(mpz_t output, mpz_t key, mpz_t input){
 			generateRight(output);
 		} else {
 			generateLeft(output);
-			//~ printf("0");
 		}
 	}
-	//~ printf("\n");
 }
 
 //See page 211
@@ -202,10 +200,6 @@ void feistel(char * result, const char * plaintext){
 	result[0] = '\0';
 	strncat (result, leftString, fragmentSize+1);
 	strncat (result + fragmentSize, rightString, fragmentSize+1);
-}
-
-void runFeistel(){
-	
 }
 
 char * getPrimeFromFile (const char * safePrimeFile){
