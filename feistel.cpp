@@ -9,10 +9,13 @@ char * getPrimeFromFile(const char * safePrimeFile);
 char * getHexStringFromFile (const char * randomSeedFile);
 
 //Generate can either 
-void seedGenerator(const char * seed, const char * prime);
-void generate(mpz_t result);
+void initGenerator(const char *primeString);
+void seedGeneratorForKeys(const char *seedString);
+
+void generateLeft(mpz_t result); //returns from hc bits
+void generateRight(mpz_t result); //returns from state.
 void generateKeySchedule();
-char * feistel(const char * plaintext);
+void feistel(char * result, const char * plaintext);
 
 void runFeistel();
 
@@ -51,24 +54,29 @@ int main(int argc, const char *argv[]){
 	char * primeString = getPrimeFromFile(safePrimeFile);
 	char * seedString = getHexStringFromFile(randomSeedFile);
 	char * plaintext = getHexStringFromFile(plaintextFile);
-	
+	int plaintextLength = strlen(plaintext);
+
 	printf("Prime for Group       : [%s]\n", primeString);
 	printf("seedString            : [%s]\n", seedString);
 	
-	seedGenerator(primeString, seedString);
+	initGenerator(primeString);
+	seedGeneratorForKeys(seedString);
 	generateKeySchedule();
 	
 	printf("Plaintext             : [%s]\n", plaintext);
 	
-	int plaintextBits =  strlen(plaintext)*4;
+	int plaintextBits = plaintextLength*4;
 	if (plaintextBits != 2*primeLen){
 		fprintf(stderr, "Error - plaintext not twice length of prime");
 		return 1;
 	}
 	
-	feistel(plaintext);
+	//Initialize a buffer.
+	char result [plaintextLength+ 1];
 	
-	
+	feistel(result, plaintext);
+	//~ printf("Result: ac8b0e8e12c43ab%s\n", result);
+	printf("Result:               : [%s]\n", result);
 	
 	printf("All processing complete\n");
 	return 0;
@@ -77,12 +85,12 @@ int main(int argc, const char *argv[]){
 //Uses PRNG to generate round keys from the key
 void generateKeySchedule(){
 	for (int i = 0; i< ROUNDS; ++i){
-		generate(keySchedule[i]);
+		generateRight(keySchedule[i]);
 	}
 }
 
-void seedGenerator(const char * seed, const char * prime){
-	mpz_init_set_str(generatorState, seed, 16);
+//initialize groupPrime, halfPoint, groupGenerator
+void initGenerator(const char * prime){
 	mpz_init_set_str(groupPrime, prime, 16);
 	
 	//halfPoint = (prime - 1)/2
@@ -95,8 +103,17 @@ void seedGenerator(const char * seed, const char * prime){
 	mpz_set (groupGenerator, two); //In safe prime groups, using two as a generator is safe.
 }
 
-//see 258
-void generate(mpz_t result){
+void seedGeneratorForKeys(const char * seed){
+	mpz_init_set_str(generatorState, seed, 16);
+}
+
+void seedGeneratorWithKey(mpz_t key){
+	mpz_set(generatorState, key);
+}
+
+//see 258 for expansion of bits
+//This always returns the *right side* of the generated 2n bit string, so the state is not compromised..
+void generateRight(mpz_t result){
 	const size_t EXPANSION = primeLen;
 	char hc_bits [EXPANSION +1]; //Store as an array of 0 and 1 chars at first.
 	
@@ -116,35 +133,47 @@ void generate(mpz_t result){
 	
 	//Terminal array string.
 	hc_bits[EXPANSION] = '\0';
-	mpz_init_set_str(result, hc_bits, 2);
+	mpz_set_str(result, hc_bits, 2);
+}
+
+//Returns the state directly, so can't be used over and over for independent results.
+void generateLeft(mpz_t result){
+	const size_t EXPANSION = primeLen;
+	
+	for(int i = 0; i< EXPANSION; ++i){
+		mpz_powm (generatorState, groupGenerator, generatorState, groupPrime);
+	}
+	
+	mpz_set(result, generatorState);
 }
 
 //See page 265
+//Uses the key as a sequence of bits dictating whether to take the left or right gen output each time.
 void keyedPRF(mpz_t output, mpz_t key, mpz_t input){
-	mpz_init_set(output, input);
+	mpz_set(output, input);
 	
 	for(int i = 0; i<primeLen; i++){
+		seedGeneratorWithKey(output);
+		
 		if(mpz_tstbit(key, i)){
-			printf("1");
-			//~ generate(prime, seed, output, 1);
-			//gmp_printf ("Output1 sub %d: %Zx\n", i, output);
+			//~ printf("1");
+			generateRight(output);
 		} else {
-			printf("0");
-			//~ generate(prime, seed, output, 0);
-			//gmp_printf ("Output0 sub %d: %Zx\n", i, output);
+			generateLeft(output);
+			//~ printf("0");
 		}
-
-		//~ mpz_init_set(seed, output);
 	}
+	//~ printf("\n");
 }
 
 //See page 211
 //output and input should be 256 bits when seeds are 128 bits.
-char * feistel(const char * plaintext){
-	char leftString [primeLen+1];
-	char rightString [primeLen+1];
-	
+void feistel(char * result, const char * plaintext){
+	//Global var: keySchedule - will be used the same in every run of the feistel network.
 	int fragmentSize = primeLen / 4;
+	
+	char leftString [fragmentSize+1];
+	char rightString [fragmentSize+1];
 	
 	//Cut input in half:
 	strncpy(leftString, plaintext, fragmentSize);
@@ -153,33 +182,26 @@ char * feistel(const char * plaintext){
 	strncpy(rightString, plaintext+fragmentSize, fragmentSize);
 	rightString[fragmentSize] = '\0';
 	
-	printf("Left String : [%s]\n", leftString);
-	printf("Right String: [%s]\n", rightString);
-	
-	mpz_t left, right;
+	mpz_t left, right, temp;
+	mpz_init(temp);
 	mpz_init_set_str(left, leftString, 16);
 	mpz_init_set_str(right, rightString, 16);
 	
-	gmp_printf("Left MPZ    : [%Zx] \n", left);
-	gmp_printf("Right MPZ   : [%Zx] \n", right);
-	
 	for (int round = 0; round < ROUNDS; ++round){
-		gmp_printf("Round %d key : [%Zx] \n", round, keySchedule[round]);
-		
-		//Copy right for later.
-		mpz_t temp;
-		//~ mpz_init(temp);
-		mpz_init_set(temp, right);
-		
-		//Right = prev left xor F(prev right)
+		mpz_set(temp, right);
+		mpz_t roundKey;
 		keyedPRF(right, keySchedule[round], right);
 		mpz_xor(right, left, right);
-		
-		//Left = Right(n-1)
 		mpz_set(left, temp);
 	}
-	char * x;
-	return x;
+	
+	gmp_sprintf(leftString, "%Zx", left);
+	gmp_sprintf(rightString, "%Zx", right);
+	
+	//Ensure result is empty before adding characters.
+	result[0] = '\0';
+	strncat (result, leftString, fragmentSize+1);
+	strncat (result + fragmentSize, rightString, fragmentSize+1);
 }
 
 void runFeistel(){
